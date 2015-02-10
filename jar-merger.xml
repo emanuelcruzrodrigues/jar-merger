@@ -1,0 +1,112 @@
+<project name="JarMerger" basedir="." xmlns:ac="antlib:net.sf.antcontrib" default="run">
+
+	<property file="./jar-merger.properties" />
+	<property name="lib.dir" value="lib" />
+	<property name="build.dir" value="ant_build" />
+	<property name="dist.dir" value="dist" />
+	
+
+	<taskdef uri="antlib:net.sf.antcontrib" resource="net/sf/antcontrib/antlib.xml">
+		<classpath>
+			<pathelement location="ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+
+	<target name="clean">
+	    <delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name="run" depends="clean">
+		<ac:for param="directory">
+			<path>
+				<dirset dir="." includes="*">
+					<exclude name="src" />
+					<exclude name="bin" />
+					<exclude name=".settings" />
+					<exclude name="${lib.dir}" />
+				</dirset>
+			</path>
+			
+			<sequential>
+			 	<antcall target="merge_jars">
+					<param name="dir" value="@{directory}" />
+				</antcall>
+			</sequential>
+		</ac:for>
+		
+	</target>
+	
+		<target name="merge_jars">
+	    <echo message="merge jars at ${dir}" />   
+	    
+	    <delete dir="${build.dir}" />
+		<mkdir dir="${build.dir}" />
+	    
+		<ac:for param="file">
+			<path>
+				<fileset dir="${dir}" includes="**/*.jar" />
+			</path>
+			<sequential>
+				<antcall target="unzip-jar">
+					<param name="dir" value="${dir}" />
+					<param name="theJar" value="@{file}" />
+				</antcall>
+			</sequential>
+		</ac:for>
+		
+		<antcall target="build-jar">
+			<param name="theJar" value="${dir}.jar" />
+		</antcall>
+		
+	</target>
+	
+	<target name="unzip-jar">
+		<basename property="filename" file="${theJar}" />
+		<echo message="unzip ${theJar}" />
+		<unzip dest="${build.dir}">
+			<fileset dir="${dir}">
+				<include name="${filename}" />
+			</fileset>
+		</unzip>
+		<antcall target="generate-doc">
+			<param name="theJar" value="${theJar}" />
+		</antcall>
+		
+	</target>
+	
+	<target name="generate-doc">
+		<java classname="br.com.jarmerger.JarDoc" failonerror="true" fork="true">
+			<sysproperty key="DEBUG" value="true" />
+			<arg value="${build.dir}" />
+			<arg value="${theJar}" />
+			<classpath>
+				<pathelement location="bin" />
+			</classpath>
+		</java>
+	</target>
+
+	<target name="build-jar">
+		<delete dir="${build.dir}/META-INF" />
+		
+		<antcall target="update-version"/>
+		
+		<basename property="filename" file="${theJar}" />
+		<jar basedir="${build.dir}" destfile="${dist.dir}/${filename}" duplicate="fail">
+			<manifest>
+				<attribute name="Permissions" value="all-permissions" />
+				<attribute name="Codebase" value="${codebase}" />
+				<attribute name="Application-Name" value="Bullcontrol" />
+				<attribute name="Specification-Vendor" value="Bullcontrol"/>
+				<attribute name="Implementation" value="Bullcontrol"/>
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="update-version">
+		<java jar="${lib.dir}/jar_versionador.jar" fork="true" failonerror="true" maxmemory="128m">
+			<arg value="${build.dir}" />
+		</java>
+	</target>
+
+</project>
