@@ -1,4 +1,4 @@
-<project name="JarMerger" basedir="." xmlns:ac="antlib:net.sf.antcontrib" default="run">
+<project name="jar-merger" basedir="." xmlns:ac="antlib:net.sf.antcontrib" default="run">
 
 	<property file="./jar-merger.properties" />
 	<property name="lib.dir" value="lib" />
